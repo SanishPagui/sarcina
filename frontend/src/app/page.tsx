@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import ProductivityModule from "@/components/ProductivityModule";
 import { MoodSelector } from '../components/ui/MoodSelector';
 import { DayScore } from '../components/ui/DayScore';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
@@ -20,7 +19,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950 p-4 md:p-8 max-w-[1600px] mx-auto w-full h-[calc(100dvh-4rem)] md:h-[100dvh] overflow-y-auto overflow-x-hidden custom-scrollbar pb-24 md:pb-8 selection:bg-fuchsia-500/30 relative">
-      
+
       {/* Background glow effects from sanat branch */}
       <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-violet-500/20 via-violet-500/5 to-transparent pointer-events-none mix-blend-screen" />
       <div className="absolute bottom-0 right-0 w-full h-[500px] bg-gradient-to-t from-emerald-500/10 to-transparent pointer-events-none mix-blend-screen" />
@@ -32,9 +31,6 @@ export default function Home() {
         {/* Header section */}
         <DashboardHeader />
 
-        {/* New Productivity Module from sanat branch */}
-        <ProductivityModule />
-        
         {/* Main Grid Layout */}
         <AnimatePresence>
         <motion.div 
