@@ -1,20 +1,15 @@
 'use client';
 
 type Mood = 'Low' | 'Medium' | 'High';
-type UiMode = 'Focus' | 'Chill' | 'Planning';
 
 interface MoodSelectorProps {
   mood: Mood;
-  setUiMode: (mode: UiMode) => void;
   onMoodChange: (mood: Mood) => void;
 }
 
-export function MoodSelector({ mood, setUiMode, onMoodChange }: MoodSelectorProps) {
+export function MoodSelector({ mood, onMoodChange }: MoodSelectorProps) {
   const handleMoodChange = (newMood: Mood) => {
     onMoodChange(newMood);
-    if (newMood === 'High') setUiMode('Focus');
-    else if (newMood === 'Medium') setUiMode('Planning');
-    else setUiMode('Chill');
   };
 
   const getMoodColor = (m: Mood) => {

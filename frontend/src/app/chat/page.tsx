@@ -733,10 +733,10 @@ export default function TeamChat() {
   };
 
   return (
-    <div className="p-4 md:p-8 w-full h-[calc(100dvh-4rem)] md:h-dvh flex flex-col overflow-y-auto overflow-x-hidden relative z-10 pb-24 md:pb-8">
+    <div className="p-4 md:-mt-8 md:p-8 w-full h-[calc(100dvh-4rem)] md:h-dvh flex flex-col overflow-y-auto overflow-x-hidden relative z-10 pb-24 ">
       <header className="mb-6 animate-fade-in-up shrink-0 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-3xl font-bold font-heading text-foreground tracking-tight">Team Flow</h2>
+          <h2 className="text-3xl font-bold font-heading text-foreground tracking-tight">SARCINA</h2>
           <p className="text-(--foreground-muted) text-sm mt-2">Create groups, add people, chat, and assign tasks in one place.</p>
         </div>
 

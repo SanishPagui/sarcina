@@ -15,7 +15,6 @@ import { NewTaskAiPanel } from '@/components/dashboard/NewTaskAiPanel';
 import { Glow } from '../components/ui/Glow';
 import TeamChat from './chat/page';
 
-type UiMode = 'Focus' | 'Chill' | 'Planning';
 type AppView = 'dashboard' | 'tasks' | 'planner' | 'focus' | 'habits' | 'chat';
 type EnergyLevel = 'Low' | 'Medium' | 'High';
 
@@ -33,7 +32,6 @@ function ViewShell({ title, subtitle, children }: { title: string; subtitle: str
 
 export default function Home() {
   const searchParams = useSearchParams();
-  const [uiMode, setUiMode] = useState<UiMode>('Focus');
   const [energyLevel, setEnergyLevel] = useState<EnergyLevel>('Medium');
   const [timerActive, setTimerActive] = useState(false);
   const [isTaskPanelOpen, setIsTaskPanelOpen] = useState(false);
@@ -48,8 +46,8 @@ export default function Home() {
       ? viewParam
       : 'dashboard';
 
-  const leftColSpan = uiMode === 'Focus' ? 'lg:col-span-8' : uiMode === 'Planning' ? 'lg:col-span-5' : 'lg:col-span-4';
-  const rightColSpan = uiMode === 'Focus' ? 'lg:col-span-4' : uiMode === 'Planning' ? 'lg:col-span-7' : 'lg:col-span-8';
+  const leftColSpan = 'lg:col-span-8';
+  const rightColSpan = 'lg:col-span-4';
 
   const renderView = () => {
     if (activeView === 'tasks') {
@@ -93,7 +91,7 @@ export default function Home() {
         <DashboardHeader onOpenNewTask={() => setIsTaskPanelOpen(true)} />
         <AnimatePresence>
           <motion.div
-            key={uiMode}
+            key="dashboard-layout"
             className="grid grid-cols-1 lg:grid-cols-12 gap-5 xl:gap-6 w-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -109,7 +107,6 @@ export default function Home() {
                 <div className="col-span-2 xl:col-span-1">
                   <MoodSelector
                     mood={energyLevel}
-                    setUiMode={setUiMode}
                     onMoodChange={setEnergyLevel}
                   />
                 </div>

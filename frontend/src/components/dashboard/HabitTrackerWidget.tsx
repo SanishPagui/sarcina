@@ -4,60 +4,84 @@ import { useState } from "react";
 import { Check, Flame, Plus, Trash2 } from "lucide-react";
 import { useHabits } from "@/lib/HabitContext";
 
+type CoachIdea = {
+  text: string;
+  reason: string;
+};
+
 function normalize(text: string): string {
   return text.toLowerCase().trim();
 }
 
-function aiHabitIdeas(goal: string): string[] {
+function aiHabitIdeas(goal: string, habits: Array<{ name: string; streak: number; lastCompletedDate: string | null }>, todayStr: string): CoachIdea[] {
   const q = normalize(goal);
   if (!q) {
     return [];
   }
 
+  const habitNames = new Set(habits.map((habit) => normalize(habit.name)));
+  const addIfMissing = (ideas: CoachIdea[], idea: CoachIdea) => {
+    const normalizedIdea = normalize(idea.text);
+    const existsAlready = Array.from(habitNames).some((name) => normalizedIdea.includes(name) || name.includes(normalizedIdea));
+    const duplicateInIdeas = ideas.some((entry) => normalize(entry.text) === normalizedIdea);
+    if (!existsAlready && !duplicateInIdeas) {
+      ideas.push(idea);
+    }
+  };
+
+  const suggestions: CoachIdea[] = [];
+  const atRisk = habits.filter((habit) => habit.streak > 0 && habit.lastCompletedDate !== todayStr).length;
+
   if (/sleep|bed|wake|morning/.test(q)) {
-    return [
-      "No phone for 20 minutes before sleep",
-      "Wake up at the same time daily",
-      "Get 10 minutes of morning sunlight",
-    ];
+    addIfMissing(suggestions, { text: "No phone for 20 minutes before sleep", reason: "Reduces stimulation and helps sleep onset." });
+    addIfMissing(suggestions, { text: "Wake up at the same time daily", reason: "Stabilizes your body clock and energy." });
+    addIfMissing(suggestions, { text: "Get 10 minutes of morning sunlight", reason: "Supports alertness and nighttime sleep quality." });
+    addIfMissing(suggestions, { text: "Set a fixed lights-off reminder", reason: "Turns intention into a reliable trigger." });
   }
 
   if (/fit|workout|gym|exercise|health/.test(q)) {
-    return [
-      "Do a 10-minute movement session",
-      "Take a 20-minute walk after lunch",
-      "Prepare workout clothes the night before",
-    ];
+    addIfMissing(suggestions, { text: "Do a 10-minute movement session", reason: "Lowers friction and keeps consistency high." });
+    addIfMissing(suggestions, { text: "Take a 20-minute walk after lunch", reason: "Simple daily movement anchor." });
+    addIfMissing(suggestions, { text: "Prepare workout clothes the night before", reason: "Pre-commitment makes starts easier." });
+    addIfMissing(suggestions, { text: "Track one weekly progress metric", reason: "Measurement improves adherence." });
   }
 
   if (/study|learn|exam|course|read/.test(q)) {
-    return [
-      "Study in one 25-minute focus block",
-      "Write 3 key takeaways after each session",
-      "Review yesterday's notes for 10 minutes",
-    ];
+    addIfMissing(suggestions, { text: "Study in one 25-minute focus block", reason: "Short deep blocks are easier to sustain." });
+    addIfMissing(suggestions, { text: "Write 3 key takeaways after each session", reason: "Improves retention through active recall." });
+    addIfMissing(suggestions, { text: "Review yesterday's notes for 10 minutes", reason: "Spaced repetition strengthens memory." });
+    addIfMissing(suggestions, { text: "Create 5 quick self-test questions", reason: "Testing reveals weak spots early." });
   }
 
   if (/focus|productiv|deep work|distraction/.test(q)) {
-    return [
-      "Start one 25-minute no-distraction sprint",
-      "Plan top 1 priority before 10 AM",
-      "Do a 2-minute desk reset before work block",
-    ];
+    addIfMissing(suggestions, { text: "Start one 25-minute no-distraction sprint", reason: "Creates a reliable deep-work trigger." });
+    addIfMissing(suggestions, { text: "Plan top 1 priority before 10 AM", reason: "Protects your highest-value task." });
+    addIfMissing(suggestions, { text: "Do a 2-minute desk reset before work block", reason: "Environment reset reduces mental friction." });
+    addIfMissing(suggestions, { text: "Silence notifications during work sprint", reason: "Cuts context-switching penalties." });
   }
 
-  return [
-    "Drink water right after waking up",
-    "Take one 10-minute reset walk",
-    "Write tomorrow's top priority before bed",
-  ];
+  if (suggestions.length === 0) {
+    addIfMissing(suggestions, { text: "Drink water right after waking up", reason: "Easy first win that compounds daily." });
+    addIfMissing(suggestions, { text: "Take one 10-minute reset walk", reason: "Resets energy without heavy effort." });
+    addIfMissing(suggestions, { text: "Write tomorrow's top priority before bed", reason: "Improves morning clarity." });
+    addIfMissing(suggestions, { text: "Set one fixed time cue for your habit", reason: "Time-based cues improve consistency." });
+  }
+
+  if (atRisk > 0) {
+    addIfMissing(suggestions, {
+      text: "Rescue one active streak today with a 2-minute version",
+      reason: "Protecting streak continuity keeps momentum alive.",
+    });
+  }
+
+  return suggestions.slice(0, 4);
 }
 
 export function HabitTrackerWidget() {
   const { habits, mounted, addHabit, toggleHabit, deleteHabit, todayStr } = useHabits();
   const [newHabit, setNewHabit] = useState("");
   const [coachPrompt, setCoachPrompt] = useState("");
-  const [coachIdeas, setCoachIdeas] = useState<string[]>([]);
+  const [coachIdeas, setCoachIdeas] = useState<CoachIdea[]>([]);
   const [coachMessage, setCoachMessage] = useState<string>("Tell AI your goal to get 3 micro-habits.");
 
   const handleAdd = (e: React.FormEvent) => {
@@ -67,10 +91,11 @@ export function HabitTrackerWidget() {
   };
 
   const runCoach = () => {
-    const ideas = aiHabitIdeas(coachPrompt);
+    const ideas = aiHabitIdeas(coachPrompt, habits, todayStr);
     setCoachIdeas(ideas);
 
     const atRisk = habits.filter((habit) => habit.streak > 0 && habit.lastCompletedDate !== todayStr).length;
+    const doneToday = habits.filter((habit) => habit.lastCompletedDate === todayStr).length;
     if (ideas.length === 0) {
       setCoachMessage("Add a goal like 'sleep better' or 'study consistently'.");
       return;
@@ -81,8 +106,19 @@ export function HabitTrackerWidget() {
       return;
     }
 
+    if (doneToday === 0 && habits.length > 0) {
+      setCoachMessage("No habits completed yet today. Start with the easiest suggestion to build momentum.");
+      return;
+    }
+
     setCoachMessage("Good momentum. Start with the easiest habit and repeat daily for 7 days.");
   };
+
+  const completedToday = habits.filter((habit) => habit.lastCompletedDate === todayStr).length;
+  const atRiskCount = habits.filter((habit) => habit.streak > 0 && habit.lastCompletedDate !== todayStr).length;
+  const avgStreak = habits.length
+    ? Math.round(habits.reduce((sum, habit) => sum + habit.streak, 0) / habits.length)
+    : 0;
 
   if (!mounted) return (
     <section className="glass-card min-h-62.5 p-6 flex flex-col">
@@ -121,6 +157,21 @@ export function HabitTrackerWidget() {
 
         <div className="rounded-xl border border-(--glass-border) bg-black/6 dark:bg-white/6 p-3 mb-2">
           <p className="text-[11px] uppercase tracking-[0.16em] text-(--foreground-muted)">AI Habit Coach</p>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            <div className="rounded-md border border-(--glass-border) bg-black/6 dark:bg-white/6 px-2 py-1">
+              <p className="text-[10px] text-(--foreground-muted)">Done Today</p>
+              <p className="text-xs font-semibold text-foreground">{completedToday}/{habits.length}</p>
+            </div>
+            <div className="rounded-md border border-(--glass-border) bg-black/6 dark:bg-white/6 px-2 py-1">
+              <p className="text-[10px] text-(--foreground-muted)">Streaks at Risk</p>
+              <p className="text-xs font-semibold text-foreground">{atRiskCount}</p>
+            </div>
+            <div className="rounded-md border border-(--glass-border) bg-black/6 dark:bg-white/6 px-2 py-1">
+              <p className="text-[10px] text-(--foreground-muted)">Avg Streak</p>
+              <p className="text-xs font-semibold text-foreground">{avgStreak}d</p>
+            </div>
+          </div>
+
           <div className="mt-2 flex items-center gap-2">
             <input
               type="text"
@@ -149,11 +200,14 @@ export function HabitTrackerWidget() {
           {coachIdeas.length > 0 ? (
             <div className="mt-2 space-y-1.5">
               {coachIdeas.map((idea) => (
-                <div key={idea} className="rounded-lg border border-(--glass-border) bg-black/6 dark:bg-white/6 px-2.5 py-1.5 flex items-center justify-between gap-2">
-                  <p className="text-xs text-foreground truncate">{idea}</p>
+                <div key={idea.text} className="rounded-lg border border-(--glass-border) bg-black/6 dark:bg-white/6 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs text-foreground truncate">{idea.text}</p>
+                    <p className="text-[10px] text-(--foreground-muted) truncate">{idea.reason}</p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => addHabit(idea)}
+                    onClick={() => addHabit(idea.text)}
                     className="text-[11px] rounded-md px-2 py-1 bg-white/10 hover:bg-white/20 text-foreground"
                   >
                     Add
