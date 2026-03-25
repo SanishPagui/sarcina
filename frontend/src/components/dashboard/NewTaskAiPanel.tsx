@@ -218,11 +218,11 @@ async function puterResponseToText(response: unknown): Promise<string | null> {
 
 async function planTaskWithPuter(prompt: string, selectedDate: string): Promise<AiTaskResponse | null> {
   if (!(await waitForPuterReady())) {
-    return null;
+    throw new Error("Puter SDK not loaded (likely blocked by browser/network).")
   }
   const puter = window.puter;
   if (!puter?.ai?.chat) {
-    return null;
+    throw new Error("Puter AI API is unavailable in this tab.")
   }
 
   const instruction = [
@@ -243,24 +243,24 @@ async function planTaskWithPuter(prompt: string, selectedDate: string): Promise<
 
   const responseText = await puterResponseToText(response);
   if (!responseText) {
-    return null;
+    throw new Error("Puter returned empty/unsupported response.")
   }
 
   const jsonText = extractJsonObject(responseText);
   if (!jsonText) {
-    return null;
+    throw new Error("Puter response did not include valid JSON.")
   }
 
   let parsed: PuterTaskPayload;
   try {
     parsed = JSON.parse(jsonText) as PuterTaskPayload;
   } catch {
-    return null;
+    throw new Error("Puter JSON parse failed.")
   }
 
   const tasks = normalizePlannedTasks(parsed, selectedDate);
   if (tasks.length === 0) {
-    return null;
+    throw new Error("Puter returned no schedulable tasks.")
   }
 
   const reply = typeof parsed.reply === "string" && parsed.reply.trim()
